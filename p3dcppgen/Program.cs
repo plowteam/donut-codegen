@@ -29,7 +29,7 @@ namespace p3dcppgen
 
         MemoryStream stream(chunk.GetData());
 
-        {1}{2}	}}";
+        {1}{2}    }}";
 
         static readonly string switchCaseTemplate = @"
         for (auto const& child : chunk.GetChildren())
@@ -38,7 +38,7 @@ namespace p3dcppgen
 
             switch (child->GetType())
             {{
-                {1}				default:
+                {1}                default:
                     std::cout << ""[{0}] Unexpected Chunk: "" << child->GetType() << ""\n"";
             }}
         }}";
@@ -93,10 +93,10 @@ namespace p3dcppgen
             {
                 forwardDecl.Add(classToken.Key);
 
-                var readers = new IndentedTextWriter(new StringWriter(), "\t") { Indent = 2 };
-                var publicBlock = new IndentedTextWriter(new StringWriter(), "\t") { Indent = 2 };
-                var privateBlock = new IndentedTextWriter(new StringWriter(), "\t") { Indent = 2 };
-                var caseBlock = new IndentedTextWriter(new StringWriter(), "\t") { Indent = 4 };
+                var readers = new IndentedTextWriter(new StringWriter()) { Indent = 2 };
+                var publicBlock = new IndentedTextWriter(new StringWriter()) { Indent = 2 };
+                var privateBlock = new IndentedTextWriter(new StringWriter()) { Indent = 2 };
+                var caseBlock = new IndentedTextWriter(new StringWriter()) { Indent = 4 };
 
                 foreach (var classProperty in classToken.Value.Values<JProperty>())
                 {
