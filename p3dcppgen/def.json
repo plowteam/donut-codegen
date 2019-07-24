@@ -182,6 +182,13 @@
     "skeletonJoint": "u32"
   },
 
+  "Intersect": {
+    "indices": "buffer<u32>",
+    "positions": "buffer<vec3>",
+    "normals": "buffer<vec3>",
+    "bounds": "child BoundingBox"
+  },
+
   "WorldSphere": {
     "name": "string",
     "version": "u32",
