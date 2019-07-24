@@ -149,6 +149,39 @@
     "volumes": "children CollisionVolume"
   },
 
+  "Shader": {
+    "name": "string",
+    "version": "u32",
+    "pddiShaderName": "string",
+    "isTrans": "u32",
+    "vertexNeeds": "u32",
+    "vertexMask": "u32",
+    "numParams": "u32",
+    "textureParams": "children ShaderTextureParam"
+  },
+
+  "ShaderTextureParam": {
+    "key": "u32",
+    "value": "string"
+  },
+
+  "CompositeDrawable": {
+    "name": "string",
+    "skeletonName": "string",
+    "propList": "child CompositeDrawablePropList"
+  },
+
+  "CompositeDrawablePropList": {
+    "numElements": "u32",
+    "props": "children CompositeDrawableProp"
+  },
+
+  "CompositeDrawableProp": {
+    "name": "string",
+    "isTrans": "u32",
+    "skeletonJoint": "u32"
+  },
+
   "WorldSphere": {
     "name": "string",
     "version": "u32",
