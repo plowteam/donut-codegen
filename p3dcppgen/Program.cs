@@ -114,8 +114,26 @@ namespace p3dcppgen
 					if (valueArgs.Length == 1)
 					{
 						var type = valueArgs[0];
-						var funcName = $"{Char.ToUpperInvariant(propertyName[0])}{propertyName.Substring(1)}";
-						var nativeType = GetNativeType(type);
+                        var funcName = $"{Char.ToUpperInvariant(propertyName[0])}{propertyName.Substring(1)}";
+                        string nativeType = null;
+
+                        if (type.Contains("["))
+                        {
+                            var split = type.Split(new char[] { '[', ']' }, StringSplitOptions.RemoveEmptyEntries);
+                            if (split.Length != 2 || !uint.TryParse(split[1], out var n)) continue;
+
+                            nativeType = GetNativeType(split[0]);
+
+                            publicBlock.WriteLine($"const {nativeType}& Get{funcName}() const {{ return _{propertyName}; }}");
+                            privateBlock.WriteLine($"{nativeType} _{propertyName};");
+                            readers.WriteLine($"uint8_t {propertyName}Data[{n}];");
+                            readers.WriteLine($"stream.ReadBytes({propertyName}Data, {n});");
+                            readers.WriteLine($"_{propertyName} = std::string(reinterpret_cast<char*>({propertyName}Data), 4);");
+
+                            continue;
+                        }
+
+						nativeType = GetNativeType(type);
 						var readerName = type == "string" ? "LPString" : $"<{nativeType}>";
 
 						publicBlock.WriteLine($"const {nativeType}& Get{funcName}() const {{ return _{propertyName}; }}");

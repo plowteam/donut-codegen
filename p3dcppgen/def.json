@@ -2,7 +2,7 @@
   "Animation": {
     "version": "u32",
     "name": "string",
-    "type": "u32",
+    "type": "string[4]",
     "numFrames": "float",
     "frameRate": "float",
     "looping": "u32",
@@ -161,7 +161,7 @@
   },
 
   "ShaderTextureParam": {
-    "key": "u32",
+    "key": "string[4]",
     "value": "string"
   },
 
