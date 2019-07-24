@@ -53,6 +53,14 @@
     "values": "buffer<quat>"
   },
 
+  "CompressedQuaternionChannel": {
+    "version": "u32",
+    "param": "string[4]",
+    "numFrames": "u32",
+    "frames": "buffer<u16>",
+    "values": "buffer<u64>"
+  },
+
   "Mesh": {
     "name": "string",
     "version": "u32",
@@ -163,7 +171,7 @@
 
   "SceneGraphDrawable": {
     "name": "string",
-    "sortOrder": "child float SceneGraphSortOrder"
+    "sortOrder": "child<float> SceneGraphSortOrder"
   },
 
   "CollisionObject": {
@@ -173,6 +181,10 @@
     "objectCount": "u32",
     "ownerCount": "u32",
     "volumes": "children CollisionVolume"
+  },
+
+  "CollisionOrientedBoundingBox": {
+    "vectors": "children<vec3> CollisionVector"
   },
 
   "Shader": {
@@ -248,5 +260,44 @@
     "fog": "u32",
     "quadCount": "u32",
     "quads": "children BillboardQuad"
+  },
+
+  "Texture": {
+    "name": "string",
+    "version": "u32",
+    "width": "u32",
+    "height": "u32",
+    "bpp": "u32",
+    "alphaDepth": "u32",
+    "numMipMaps": "u32",
+    "textureType": "u32",
+    "usage": "u32",
+    "priority": "u32",
+    "image": "child Image"
+  },
+
+  "Image": {
+    "name": "string",
+    "version": "u32",
+    "width": "u32",
+    "height": "u32",
+    "bpp": "u32",
+    "palettized": "u32",
+    "hasAlpha": "u32",
+    "format": "u32",
+    "data": "buffer<u8> ImageData"
+  },
+
+  "TextureFont": {
+    "version": "u32",
+    "name": "string",
+    "shader": "string",
+    "size": "float",
+    "width": "float",
+    "height": "float",
+    "baseLine": "float",
+    "numTextures": "u32",
+    "textures": "children Texture",
+    "glyphs": "buffer<FontGlyph> FontGlyphs"
   }
 }
