@@ -33,9 +33,7 @@ namespace p3dcppgen
         static readonly string switchCaseTemplate = @"
         for (auto const& child : chunk.GetChildren())
         {{
-            MemoryStream data(child->GetData());
-
-            switch (child->GetType())
+            {2}switch (child->GetType())
             {{
                 {1}                default:
                     std::cout << ""[{0}] Unexpected Chunk: "" << child->GetType() << ""\n"";
@@ -96,6 +94,7 @@ namespace p3dcppgen
                 var publicBlock = new IndentedTextWriter(new StringWriter()) { Indent = 2 };
                 var privateBlock = new IndentedTextWriter(new StringWriter()) { Indent = 2 };
                 var caseBlock = new IndentedTextWriter(new StringWriter()) { Indent = 4 };
+                bool useDataStream = false;
 
                 foreach (var classProperty in classToken.Value.Values<JProperty>())
                 {
@@ -173,7 +172,8 @@ namespace p3dcppgen
                         _{propertyName} = data.Read{readerName}();
                         break;
                     }}");
-                                    }
+                                        useDataStream = true;
+                                    }                                    
                                     break;
                                 }
                             case "children":
@@ -206,6 +206,7 @@ namespace p3dcppgen
                         _{propertyName}.push_back(data.Read{readerName}());
                         break;
                     }}");
+                                        useDataStream = true;
                                     }
                                     break;
                                 }
@@ -237,6 +238,7 @@ namespace p3dcppgen
                         data.ReadBytes(reinterpret_cast<uint8_t*>(_{propertyName}.data()), length * sizeof({type}));
                         break;
                     }}");
+                                        useDataStream = true;
                                     }
                                     break;
                                 }
@@ -259,6 +261,7 @@ namespace p3dcppgen
                         data.ReadBytes(reinterpret_cast<uint8_t*>(_{propertyName}.at(channel).data()), length * sizeof({type}));
                         break;
                     }}");
+                                    useDataStream = true;
                                     break;
                                 }
                         }
@@ -268,7 +271,10 @@ namespace p3dcppgen
                 var switchBlock = new StringWriter();
                 if (!string.IsNullOrEmpty(caseBlock.InnerWriter.ToString()))
                 {
-                    switchBlock.WriteLine(switchCaseTemplate, classToken.Key, caseBlock.InnerWriter);
+                    switchBlock.WriteLine(switchCaseTemplate,
+                        classToken.Key,
+                        caseBlock.InnerWriter,
+                        useDataStream ? "MemoryStream data(child->GetData());\n\n            " : null);
                 }
 
                 headersb.AppendLine(string.Format(classTemplate,
