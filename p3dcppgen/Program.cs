@@ -148,13 +148,14 @@ namespace p3dcppgen
                                         var type = valueArgs[1];
                                         var chunkType = valueArgs[2];
                                         var nativeType = GetNativeType(type);
+                                        var readerName = type == "string" ? "LPString" : $"<{nativeType}>";
 
                                         publicBlock.WriteLine($"const {nativeType}& Get{funcName}() const {{ return _{propertyName}; }}");
                                         privateBlock.WriteLine($"{nativeType} _{propertyName};");
 
                                         caseBlock.WriteLine($@"case ChunkType::{chunkType}:
 					{{
-						_{propertyName} = data.Read<{nativeType}>();
+						_{propertyName} = data.Read{readerName}();
 						break;
 					}}");
                                     }
@@ -180,13 +181,14 @@ namespace p3dcppgen
                                         var type = valueArgs[1];
                                         var chunkType = valueArgs[2];
                                         var nativeType = GetNativeType(type);
+                                        var readerName = type == "string" ? "LPString" : $"<{nativeType}>";
 
                                         publicBlock.WriteLine($"const std::vector<{nativeType}>& Get{funcName}() const {{ return _{propertyName}; }}");
                                         privateBlock.WriteLine($"std::vector<{nativeType}> _{propertyName};");
 
                                         caseBlock.WriteLine($@"case ChunkType::{chunkType}:
 					{{
-						_{propertyName}.push_back(data.Read<{nativeType}>());
+						_{propertyName}.push_back(data.Read{readerName}());
 						break;
 					}}");
                                     }
