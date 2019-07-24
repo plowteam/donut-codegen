@@ -118,13 +118,13 @@ namespace p3dcppgen
 						var type = GetNativeType(value);
 						var readerName = value == "string" ? "LPString" : $"<{type}>";
 
-						publicBlock.WriteLine($"const {type}& {funcName}() const {{ return _{propertyName}; }}");
+						publicBlock.WriteLine($"const {type}& Get{funcName}() const {{ return _{propertyName}; }}");
 						privateBlock.WriteLine($"{type} _{propertyName};");
 						readers.WriteLine($"_{propertyName} = stream.Read{readerName}();");
 					}
 					else if (valueArgs.Length <= 3)
 					{
-						var funcName = $"Get{Char.ToUpperInvariant(propertyName[0])}{propertyName.Substring(1)}";
+						var funcName = $"{Char.ToUpperInvariant(propertyName[0])}{propertyName.Substring(1)}";
 
 						switch (valueArgs[0])
 						{

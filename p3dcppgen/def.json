@@ -1,4 +1,39 @@
 ﻿{
+  "Animation": {
+    "version": "u32",
+    "name": "string",
+    "type": "u32",
+    "numFrames": "float",
+    "frameRate": "float",
+    "looping": "u32",
+    "groupList": "child AnimationGroupList"
+  },
+
+  "AnimationGroupList": {
+    "version": "u32",
+    "numGroups": "u32",
+    "groups": "children AnimationGroup"
+  },
+
+  "AnimationGroup": {
+    "version": "u32",
+    "name": "string",
+    "groupId": "u32",
+    "numChannels": "u32",
+    "vector1Channel": "child Vector1Channel",
+    "vector2Channel": "child Vector2Channel",
+    "vector3Channel": "child Vector3Channel",
+    "quaternionChannel": "child QuaternionChannel",
+    "compressedQuaternionChannel": "child CompressedQuaternionChannel"
+  },
+
+  "Mesh": {
+    "name": "string",
+    "version": "u32",
+    "numPrimGroups": "u32",
+    "primitiveGroups": "children PrimitiveGroup"
+  },
+
   "PolySkin": {
     "name": "string",
     "version": "u32",
@@ -53,5 +88,72 @@
     "secondaryAxis": "s32",
     "twistAxis": "s32",
     "restPose": "mat4"
+  },
+
+  "StaticEntity": {
+    "name": "string",
+    "version": "u32",
+    "renderOrder": "u32",
+    "mesh": "child Mesh"
+  },
+
+  "StaticPhysics": {
+    "name": "string",
+    "collision": "child CollisionObject"
+  },
+
+  "InstancedStaticPhysics": {
+    "name": "string",
+    "meshes": "children Mesh",
+    "instanceList": "child InstanceList"
+  },
+
+  "InstanceList": {
+    "name": "string",
+    "sceneGraph": "child SceneGraph"
+  },
+
+  "SceneGraph": {
+    "name": "string",
+    "root": "child SceneGraphRoot"
+  },
+
+  "SceneGraphRoot": {
+    "branch": "child SceneGraphBranch"
+  },
+
+  "SceneGraphBranch": {
+    "name": "string",
+    "numChildren": "u32",
+    "transform": "mat4",
+    "children": "children SceneGraphTransform",
+    "drawables": "children SceneGraphDrawable"
+  },
+
+  "SceneGraphTransform": {
+    "name": "string",
+    "children": "children SceneGraphTransform"
+  },
+
+  "SceneGraphDrawable": {
+    "name": "string",
+    "sortOrder": "child SceneGraphSortOrder"
+  },
+
+  "CollisionObject": {
+    "name": "string",
+    "version": "u32",
+    "materialName": "string",
+    "objectCount": "u32",
+    "ownerCount": "u32",
+    "volumes": "children CollisionVolume"
+  },
+
+  "WorldSphere": {
+    "name": "string",
+    "version": "u32",
+    "meshCount": "u32",
+    "billboardCount": "u32",
+    "meshes": "children Mesh"
   }
 }
