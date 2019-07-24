@@ -220,7 +220,7 @@ namespace p3dcppgen
                                         publicBlock.WriteLine($"const std::vector<{nativeType}>& Get{funcName}() const {{ return _{propertyName}; }}");
                                         privateBlock.WriteLine($"std::vector<{nativeType}> _{propertyName};");
                                         readers.WriteLine($"_{propertyName}.resize(stream.Read<{nativeType}>());");
-                                        readers.WriteLine($"stream.ReadBytes(reinterpret_cast<uint8_t*>(_{propertyName}.data()), _{propertyName}.size() * sizeof(nativeType));");
+                                        readers.WriteLine($"stream.ReadBytes(reinterpret_cast<uint8_t*>(_{propertyName}.data()), _{propertyName}.size() * sizeof({nativeType}));");
                                     }
                                     else if (valueArgs.Length == 3)
                                     {
