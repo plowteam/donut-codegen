@@ -137,7 +137,7 @@
 
   "SceneGraphDrawable": {
     "name": "string",
-    "sortOrder": "child SceneGraphSortOrder"
+    "sortOrder": "child float SceneGraphSortOrder"
   },
 
   "CollisionObject": {

@@ -130,33 +130,67 @@ namespace p3dcppgen
 						{
 							case "child":
 								{
-									if (valueArgs.Length != 2) break;
-									var chunkType = valueArgs[1];
+                                    if (valueArgs.Length == 2)
+                                    {
+                                        var chunkType = valueArgs[1];
 
-									publicBlock.WriteLine($"const unique_ptr<{chunkType}>& Get{funcName}() const {{ return _{propertyName}; }}");
-									privateBlock.WriteLine($"unique_ptr<{chunkType}> _{propertyName};");
+                                        publicBlock.WriteLine($"const unique_ptr<{chunkType}>& Get{funcName}() const {{ return _{propertyName}; }}");
+                                        privateBlock.WriteLine($"unique_ptr<{chunkType}> _{propertyName};");
 
-									caseBlock.WriteLine($@"case ChunkType::{chunkType}:
+                                        caseBlock.WriteLine($@"case ChunkType::{chunkType}:
 					{{
 						_{propertyName} = std::make_unique<{chunkType}>(*child);
 						break;
 					}}");
-									break;
+                                    }
+                                    else if (valueArgs.Length == 3)
+                                    {
+                                        var type = valueArgs[1];
+                                        var chunkType = valueArgs[2];
+                                        var nativeType = GetNativeType(type);
+
+                                        publicBlock.WriteLine($"const {nativeType}& Get{funcName}() const {{ return _{propertyName}; }}");
+                                        privateBlock.WriteLine($"{nativeType} _{propertyName};");
+
+                                        caseBlock.WriteLine($@"case ChunkType::{chunkType}:
+					{{
+						_{propertyName} = data.Read<{nativeType}>();
+						break;
+					}}");
+                                    }
+                                    break;
 								}
 							case "children":
 								{
-									if (valueArgs.Length != 2) break;
-									var chunkType = valueArgs[1];
+                                    if (valueArgs.Length == 2)
+                                    {
+                                        var chunkType = valueArgs[1];
 
-									publicBlock.WriteLine($"const std::vector<unique_ptr<{chunkType}>>& Get{funcName}() const {{ return _{propertyName}; }}");
-									privateBlock.WriteLine($"std::vector<unique_ptr<{chunkType}>> _{propertyName};");
+                                        publicBlock.WriteLine($"const std::vector<unique_ptr<{chunkType}>>& Get{funcName}() const {{ return _{propertyName}; }}");
+                                        privateBlock.WriteLine($"std::vector<unique_ptr<{chunkType}>> _{propertyName};");
 
-									caseBlock.WriteLine($@"case ChunkType::{chunkType}:
+                                        caseBlock.WriteLine($@"case ChunkType::{chunkType}:
 					{{
 						_{propertyName}.push_back(std::make_unique<{chunkType}>(*child));
 						break;
 					}}");
-									break;
+                                    }
+                                    else if (valueArgs.Length == 3)
+                                    {
+                                        var type = valueArgs[1];
+                                        var chunkType = valueArgs[2];
+                                        var nativeType = GetNativeType(type);
+
+                                        publicBlock.WriteLine($"const std::vector<{nativeType}>& Get{funcName}() const {{ return _{propertyName}; }}");
+                                        privateBlock.WriteLine($"std::vector<{nativeType}> _{propertyName};");
+
+                                        caseBlock.WriteLine($@"case ChunkType::{chunkType}:
+					{{
+						_{propertyName}.push_back(data.Read<{nativeType}>());
+						break;
+					}}");
+                                    }
+                                    break;
 								}
 							case "buffer":
 								{
