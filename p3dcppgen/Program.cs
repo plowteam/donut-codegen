@@ -7,9 +7,9 @@ using Newtonsoft.Json.Linq;
 
 namespace p3dcppgen
 {
-	class Program
-	{
-		static readonly string classTemplate = @"
+    class Program
+    {
+        static readonly string classTemplate = @"
 	class {0}
 	{{
 	public:
@@ -22,7 +22,7 @@ namespace p3dcppgen
 		{2}
 	}};";
 
-		static readonly string ctorTemplate = @"
+        static readonly string ctorTemplate = @"
 	{0}::{0}(const P3DChunk& chunk)
 	{{
 		assert(chunk.IsType(ChunkType::{0}));
@@ -31,7 +31,7 @@ namespace p3dcppgen
 
 		{1}{2}	}}";
 
-		static readonly string switchCaseTemplate = @"
+        static readonly string switchCaseTemplate = @"
 		for (auto const& child : chunk.GetChildren())
 		{{
 			MemoryStream data(child->GetData());
@@ -68,196 +68,193 @@ namespace p3dcppgen
 
         static string GetNativeType(string s) => typeDict.TryGetValue(s, out var v) ? v : s;
 
-		static void Main(string[] args)
-		{
-			var defObject = JObject.Parse(File.ReadAllText("def.json"));
-			var headersb = new StringBuilder();
-			var cpprb = new StringBuilder();
-			var forwardDecl = new List<string>();
+        static void Main(string[] args)
+        {
+            var defObject = JObject.Parse(File.ReadAllText("def.json"));
+            var headersb = new StringBuilder();
+            var cpprb = new StringBuilder();
+            var forwardDecl = new List<string>();
 
-			foreach (var classToken in defObject)
-			{
-				forwardDecl.Add(classToken.Key);
+            foreach (var classToken in defObject)
+            {
+                forwardDecl.Add(classToken.Key);
 
-				var readers = new IndentedTextWriter(new StringWriter(), "\t") { Indent = 2 };
-				var publicBlock = new IndentedTextWriter(new StringWriter(), "\t") { Indent = 2 };
-				var privateBlock = new IndentedTextWriter(new StringWriter(), "\t") { Indent = 2 };
-				var caseBlock = new IndentedTextWriter(new StringWriter(), "\t") { Indent = 4 };
+                var readers = new IndentedTextWriter(new StringWriter(), "\t") { Indent = 2 };
+                var publicBlock = new IndentedTextWriter(new StringWriter(), "\t") { Indent = 2 };
+                var privateBlock = new IndentedTextWriter(new StringWriter(), "\t") { Indent = 2 };
+                var caseBlock = new IndentedTextWriter(new StringWriter(), "\t") { Indent = 4 };
 
-				foreach (var propToken in classToken.Value)
-				{
-					var propObject = propToken.ToObject<JProperty>();
+                foreach (var classProperty in classToken.Value.Values<JProperty>())
+                {
+                    if (classProperty.Value.Type != JTokenType.String) continue;
 
-					switch (propObject.Name)
-					{
-							case "child-buffer":
-							{
-								foreach (var propToken2 in propToken.Values())
-								{
-									var propObject2 = propToken2.ToObject<JProperty>();
-									var funcName = Char.ToUpperInvariant(propObject2.Name[0]) + propObject2.Name.Substring(1);
+                    var valueString = classProperty.Value.ToString();
+                    if (string.IsNullOrWhiteSpace(valueString)) continue;
 
-									var chunk = propObject2.Value.ToObject<JObject>()["chunk"];
-									var type = GetNativeType(propObject2.Value.ToObject<JObject>()["type"].ToString());
-									var channels = propObject2.Value.ToObject<JObject>()["channels"];
+                    var propertyName = classProperty.Name.ToString();
+                    if (string.IsNullOrWhiteSpace(propertyName)) continue;
 
-									bool hasChannels = false;
-									if (channels != null && (bool)channels)
-									{
-										hasChannels = true;
-									}
+                    var valueArgs = valueString.Split(new char[] { ' ', '<', '>' }, StringSplitOptions.RemoveEmptyEntries);
+                    if (valueArgs.Length == 0) continue;
 
-									if (hasChannels)
-									{
-										publicBlock.WriteLine($"const std::vector<{type}>& Get{funcName}(size_t channel) const {{ return _{propObject2.Name}.at(channel); }}");
-										privateBlock.WriteLine($"std::vector<std::vector<{type}>> _{propObject2.Name};");
+                    if (valueArgs.Length == 1)
+                    {
+                        var value = valueArgs[0];
+                        var funcName = $"{Char.ToUpperInvariant(propertyName[0])}{propertyName.Substring(1)}";
+                        var type = GetNativeType(value);
+                        var readerName = value == "string" ? "LPString" : $"<{type}>";
 
-										caseBlock.WriteLine($@"case ChunkType::{chunk}:
-				{{
-					uint32_t len = data.Read<uint32_t>();
-					uint32_t channel = data.Read<uint32_t>();
-					_{propObject2.Name}.resize(channel + 1);
-					data.ReadBytes(reinterpret_cast<uint8_t*>(_{propObject2.Name}[channel].data()), len * sizeof({type}));
-					break;
-				}}");
-									}
-									else
-									{
-										publicBlock.WriteLine($"const std::vector<{type}>& Get{funcName}() const {{ return _{propObject2.Name}; }}");
-										privateBlock.WriteLine($"std::vector<{type}> _{propObject2.Name};");
+                        publicBlock.WriteLine($"const {type}& {funcName}() const {{ return _{propertyName}; }}");
+                        privateBlock.WriteLine($"{type} _{propertyName};");
+                        readers.WriteLine($"_{propertyName} = stream.Read{readerName}();");
+                    }
+                    else if (valueArgs.Length <= 3)
+                    {
+                        var funcName = $"Get{Char.ToUpperInvariant(propertyName[0])}{propertyName.Substring(1)}";
 
-										caseBlock.WriteLine($@"case ChunkType::{chunk}:
-				{{
-					uint32_t len = data.Read<uint32_t>();
-					_{propObject2.Name}.resize(len);
-					data.ReadBytes(reinterpret_cast<uint8_t*>(_{propObject2.Name}.data()), len * sizeof({type}));
-					break;
-				}}");
-									}
-								}
-								break;
-							}
-						case "child":
-							{
-								foreach (var propToken2 in propToken.Values())
-								{
-									var propObject2 = propToken2.ToObject<JProperty>();
-									var funcName = Char.ToUpperInvariant(propObject2.Name[0]) + propObject2.Name.Substring(1);
+                        switch (valueArgs[0])
+                        {
+                            case "child":
+                                {
+                                    if (valueArgs.Length != 2) break;
+                                    var chunkType = valueArgs[1];
 
-									publicBlock.WriteLine($"const unique_ptr<{propObject2.Value}>& Get{funcName}() const {{ return _{propObject2.Name}; }}");
-									privateBlock.WriteLine($"unique_ptr<{propObject2.Value}> _{propObject2.Name};");
+                                    publicBlock.WriteLine($"const unique_ptr<{chunkType}>& Get{funcName}() const {{ return _{propertyName}; }}");
+                                    privateBlock.WriteLine($"unique_ptr<{chunkType}> _{propertyName};");
 
-									caseBlock.WriteLine($@"case ChunkType::{propObject2.Value}:
-				{{
-					_{propObject2.Name} = std::make_unique<{propObject2.Value}>(*child);
-					break;
-				}}");
-								}
-								break;
-							}
-						case "children":
-							{
-								foreach (var propToken2 in propToken.Values())
-								{
-									var propObject2 = propToken2.ToObject<JProperty>();
-									var funcName = Char.ToUpperInvariant(propObject2.Name[0]) + propObject2.Name.Substring(1);
+                                    caseBlock.WriteLine($@"case ChunkType::{chunkType}:
+                    {{
+                    	_{propertyName} = std::make_unique<{chunkType}>(*child);
+                    	break;
+                    }}");
+                                    break;
+                                }
+                            case "children":
+                                {
+                                    if (valueArgs.Length != 2) break;
+                                    var chunkType = valueArgs[1];
 
-									publicBlock.WriteLine($"const std::vector<unique_ptr<{propObject2.Value}>>& Get{funcName}() const {{ return _{propObject2.Name}; }}");
-									privateBlock.WriteLine($"std::vector<unique_ptr<{propObject2.Value}>> _{propObject2.Name};");
+                                    publicBlock.WriteLine($"const std::vector<unique_ptr<{chunkType}>>& Get{funcName}() const {{ return _{propertyName}; }}");
+                                    privateBlock.WriteLine($"std::vector<unique_ptr<{chunkType}>> _{propertyName};");
 
-									caseBlock.WriteLine($@"case ChunkType::{propObject2.Value}:
-				{{
-					_{propObject2.Name}.push_back(std::make_unique<{propObject2.Value}>(*child));
-					break;
-				}}");
-								}
-								break;
-							}
-						default:
-							{
-								if (propObject.Value.Type != JTokenType.String) break;
+                                    caseBlock.WriteLine($@"case ChunkType::{chunkType}:
+                    {{
+                    	_{propertyName}.push_back(std::make_unique<{chunkType}>(*child));
+                    	break;
+                    }}");
+                                    break;
+                                }
+                            case "buffer":
+                                {
+                                    if (valueArgs.Length != 3) break;
+                                    var type = GetNativeType(valueArgs[1]);
+                                    var chunkType = valueArgs[2];
 
-								var funcName = Char.ToUpperInvariant(propObject.Name[0]) + propObject.Name.Substring(1);
-                                var type = GetNativeType(propObject.Value.ToString());
-                                var readerName = propObject.Value.ToString() == "string" ? "LPString" : $"<{type}>";
+                                    publicBlock.WriteLine($"const std::vector<{type}>& Get{funcName}() const {{ return _{propertyName}; }}");
+                                    privateBlock.WriteLine($"std::vector<{type}> _{propertyName};");
 
-                                readers.WriteLine($"_{propObject.Name} = stream.Read{readerName}();");
-								publicBlock.WriteLine($"const {type}& Get{funcName}() const {{ return _{propObject.Name}; }}");
-								privateBlock.WriteLine($"{type} _{propObject.Name};");
-								break;
-							}
-					}               
-				}
+                                    caseBlock.WriteLine($@"case ChunkType::{chunkType}:
+                    {{
+                    	uint32_t length = data.Read<uint32_t>();
+                    	_{propertyName}.resize(length);
+                    	data.ReadBytes(reinterpret_cast<uint8_t*>(_{propertyName}.data()), length * sizeof({type}));
+                    	break;
+                    }}");
+                                    break;
+                                }
+                            case "buffers":
+                                {
+                                    if (valueArgs.Length != 3) break;
+                                    var type = GetNativeType(valueArgs[1]);
+                                    var chunkType = valueArgs[2];
 
-				var switchBlock = new StringWriter();
-				if (!string.IsNullOrEmpty(caseBlock.InnerWriter.ToString()))
-				{
-					switchBlock.WriteLine(switchCaseTemplate, classToken.Key, caseBlock.InnerWriter);
-				}
+                                    publicBlock.WriteLine($"const std::vector<{type}>& Get{funcName}(size_t index) const {{ return _{propertyName}.at(index); }}");
+                                    privateBlock.WriteLine($"std::vector<std::vector<{type}>> _{propertyName};");
 
-				headersb.AppendLine(string.Format(classTemplate,
-					classToken.Key,
-					publicBlock.InnerWriter, 
-					privateBlock.InnerWriter));
+                                    caseBlock.WriteLine($@"case ChunkType::{chunkType}:
+                    {{
+                    	uint32_t length = data.Read<uint32_t>();
+                    	uint32_t channel = data.Read<uint32_t>();
+                    	_{propertyName}.resize(channel + 1);
+                    	_{propertyName}.at(channel).resize(length);
+                    	data.ReadBytes(reinterpret_cast<uint8_t*>(_{propertyName}.at(channel).data()), length * sizeof({type}));
+                    	break;
+                    }}");
+                                    break;
+                                }
+                        }
+                    }               
+                }
 
-				cpprb.AppendLine(string.Format(ctorTemplate,
-					classToken.Key,
-					readers.InnerWriter,
-					switchBlock));
-			}
+                var switchBlock = new StringWriter();
+                if (!string.IsNullOrEmpty(caseBlock.InnerWriter.ToString()))
+                {
+                    switchBlock.WriteLine(switchCaseTemplate, classToken.Key, caseBlock.InnerWriter);
+                }
 
-			var headerIncludes = new[]
-			{
-				"string",
-				"memory",
-				"vector",
-				"glm/vec2.hpp",
-				"glm/vec3.hpp",
-				"glm/vec4.hpp",
-				"glm/gtc/quaternion.hpp",
-				"glm/gtc/mat4x4.hpp",
-			};
+                headersb.AppendLine(string.Format(classTemplate,
+                    classToken.Key,
+                    publicBlock.InnerWriter,
+                    privateBlock.InnerWriter));
 
-			var cppIncludes = new[]
-			{
-				"Core/MemoryStream.h",
-				"iostream",
-			};
+                cpprb.AppendLine(string.Format(ctorTemplate,
+                    classToken.Key,
+                    readers.InnerWriter,
+                    switchBlock));
+            }
 
-			using (var writer = File.CreateText("p3d.generated.h"))
-			{
-				foreach (var inc in headerIncludes)
-				{
-					writer.WriteLine($"#include <{inc}>");
-				}
+            var headerIncludes = new[]
+            {
+                "string",
+                "memory",
+                "vector",
+                "glm/vec2.hpp",
+                "glm/vec3.hpp",
+                "glm/vec4.hpp",
+                "glm/gtc/quaternion.hpp",
+                "glm/gtc/mat4x4.hpp",
+            };
 
-				writer.WriteLine();
+            var cppIncludes = new[]
+            {
+                "Core/MemoryStream.h",
+                "iostream",
+            };
 
-				writer.WriteLine("namespace Donut::P3D");
-				writer.WriteLine("{");
-				foreach (var decl in forwardDecl)
-				{
-					writer.WriteLine($"\tclass {decl};");
-				}
-				writer.Write(headersb.ToString());
-				writer.WriteLine("}");
-			}
+            using (var writer = File.CreateText("p3d.generated.h"))
+            {
+                foreach (var inc in headerIncludes)
+                {
+                    writer.WriteLine($"#include <{inc}>");
+                }
 
-			using (var writer = File.CreateText("p3d.generated.cpp"))
-			{
-				writer.WriteLine("#include \"p3d.generated.h\"");
-				foreach (var inc in cppIncludes)
-				{
-					writer.WriteLine($"#include <{inc}>");
-				}
+                writer.WriteLine();
 
-				writer.WriteLine();
+                writer.WriteLine("namespace Donut::P3D");
+                writer.WriteLine("{");
+                foreach (var decl in forwardDecl)
+                {
+                    writer.WriteLine($"\tclass {decl};");
+                }
+                writer.Write(headersb.ToString());
+                writer.WriteLine("}");
+            }
 
-				writer.WriteLine("namespace Donut::P3D");
-				writer.Write("{");
-				writer.Write(cpprb.ToString());
-				writer.WriteLine("}");
-			}
-		}
-	}
+            using (var writer = File.CreateText("p3d.generated.cpp"))
+            {
+                writer.WriteLine("#include \"p3d.generated.h\"");
+                foreach (var inc in cppIncludes)
+                {
+                    writer.WriteLine($"#include <{inc}>");
+                }
+
+                writer.WriteLine();
+
+                writer.WriteLine("namespace Donut::P3D");
+                writer.Write("{");
+                writer.Write(cpprb.ToString());
+                writer.WriteLine("}");
+            }
+        }
+    }
 }
