@@ -27,6 +27,32 @@
     "compressedQuaternionChannel": "child CompressedQuaternionChannel"
   },
 
+  "Vector2Channel": {
+    "version": "u32",
+    "param": "string[4]",
+    "mapping": "u16",
+    "constants": "vec3",
+    "numFrames": "u32",
+    "frames": "buffer<u16>",
+    "values": "buffer<vec2>"
+  },
+
+  "Vector3Channel": {
+    "version": "u32",
+    "param": "string[4]",
+    "numFrames": "u32",
+    "frames": "buffer<u16>",
+    "values": "buffer<vec3>"
+  },
+
+  "QuaternionChannel": {
+    "version": "u32",
+    "param": "string[4]",
+    "numFrames": "u32",
+    "frames": "buffer<u16>",
+    "values": "buffer<quat>"
+  },
+
   "Mesh": {
     "name": "string",
     "version": "u32",
