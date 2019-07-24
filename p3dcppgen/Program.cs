@@ -191,7 +191,7 @@ namespace p3dcppgen
 								}
 							case "buffers":
 								{
-									if (valueArgs.Length == 3) break;
+									if (valueArgs.Length != 3) break;
 									var type = GetNativeType(valueArgs[1]);
 									var chunkType = valueArgs[2];
 
