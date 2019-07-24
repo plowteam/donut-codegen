@@ -229,7 +229,8 @@ namespace p3dcppgen
 								{
 									if (valueArgs.Length != 3) break;
 									var type = GetNativeType(valueArgs[1]);
-									var chunkType = valueArgs[2];
+                                    if (type == "string") break; // don't allow string buffers
+                                    var chunkType = valueArgs[2];
 
 									publicBlock.WriteLine($"const std::vector<{type}>& Get{funcName}(size_t index) const {{ return _{propertyName}.at(index); }}");
 									privateBlock.WriteLine($"std::vector<std::vector<{type}>> _{propertyName};");
