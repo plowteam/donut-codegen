@@ -195,5 +195,32 @@
     "meshCount": "u32",
     "billboardCount": "u32",
     "meshes": "children Mesh"
+  },
+
+  "BillboardQuad": {
+    "version": "u32",
+    "name": "string",
+    "mode": "string[4]",
+    "translation": "vec3",
+    "color": "u32",
+    "uv0": "vec2",
+    "uv1": "vec2",
+    "uv2": "vec2",
+    "uv3": "vec2",
+    "width": "float",
+    "height": "float",
+    "distance": "float",
+    "uvOffset": "vec2"
+  },
+
+  "BillboardQuadGroup": {
+    "version": "u32",
+    "name": "string",
+    "shader": "string",
+    "zTest": "u32",
+    "zWrite": "u32",
+    "fog": "u32",
+    "quadCount": "u32",
+    "quads": "children BillboardQuad"
   }
 }

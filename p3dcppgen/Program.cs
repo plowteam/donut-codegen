@@ -28,7 +28,6 @@ namespace p3dcppgen
         assert(chunk.IsType(ChunkType::{0}));
 
         MemoryStream stream(chunk.GetData());
-
         {1}{2}    }}";
 
         static readonly string switchCaseTemplate = @"
@@ -126,9 +125,7 @@ namespace p3dcppgen
 
                             publicBlock.WriteLine($"const {nativeType}& Get{funcName}() const {{ return _{propertyName}; }}");
                             privateBlock.WriteLine($"{nativeType} _{propertyName};");
-                            readers.WriteLine($"uint8_t {propertyName}Data[{n}];");
-                            readers.WriteLine($"stream.ReadBytes({propertyName}Data, {n});");
-                            readers.WriteLine($"_{propertyName} = std::string(reinterpret_cast<char*>({propertyName}Data), 4);");
+                            readers.WriteLine($"_{propertyName} = stream.ReadString({n});");
 
                             continue;
                         }
