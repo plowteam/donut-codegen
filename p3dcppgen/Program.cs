@@ -3,6 +3,7 @@ using System.CodeDom.Compiler;
 using System.Collections.Generic;
 using System.IO;
 using System.Text;
+using CommandLine;
 using Newtonsoft.Json.Linq;
 
 namespace p3dcppgen
@@ -14,7 +15,7 @@ namespace p3dcppgen
     {{
     public:
 
-        {0}();
+        {0}(const P3DChunk&);
 
         {1}
     private:
@@ -79,9 +80,32 @@ namespace p3dcppgen
 
         static string GetNativeType(string s) => typeDict.TryGetValue(s, out var v) ? v : s;
 
-        static void Main(string[] args)
+        class Options
         {
-            var defObject = JObject.Parse(File.ReadAllText("def.json"));
+            [Option('i', "input")]
+            public string InputFile { get; set; }
+
+            [Option('o', "output")]
+            public string OutputPath { get; set; }
+        }
+
+        static int Main(string[] args)
+        {
+            var result = Parser.Default.ParseArguments<Options>(args);
+            return result.MapResult(Process, errors => 1);
+        }
+
+        private static int Process(Options options)
+        {
+            if (!File.Exists(options.InputFile) ||
+                !Directory.Exists(options.OutputPath))
+            {
+                return 1;
+            }
+
+            int exitCode = 0;
+
+            var defObject = JObject.Parse(File.ReadAllText(options.InputFile));
             var headersb = new StringBuilder();
             var cpprb = new StringBuilder();
             var forwardDecl = new List<string>();
@@ -148,8 +172,8 @@ namespace p3dcppgen
                                     {
                                         var chunkType = valueArgs[1];
 
-                                        publicBlock.WriteLine($"const unique_ptr<{chunkType}>& Get{funcName}() const {{ return _{propertyName}; }}");
-                                        privateBlock.WriteLine($"unique_ptr<{chunkType}> _{propertyName};");
+                                        publicBlock.WriteLine($"const std::unique_ptr<{chunkType}>& Get{funcName}() const {{ return _{propertyName}; }}");
+                                        privateBlock.WriteLine($"std::unique_ptr<{chunkType}> _{propertyName};");
 
                                         caseBlock.WriteLine($@"case ChunkType::{chunkType}:
                     {{
@@ -182,8 +206,8 @@ namespace p3dcppgen
                                     {
                                         var chunkType = valueArgs[1];
 
-                                        publicBlock.WriteLine($"const std::vector<unique_ptr<{chunkType}>>& Get{funcName}() const {{ return _{propertyName}; }}");
-                                        privateBlock.WriteLine($"std::vector<unique_ptr<{chunkType}>> _{propertyName};");
+                                        publicBlock.WriteLine($"const std::vector<std::unique_ptr<{chunkType}>>& Get{funcName}() const {{ return _{propertyName}; }}");
+                                        privateBlock.WriteLine($"std::vector<std::unique_ptr<{chunkType}>> _{propertyName};");
 
                                         caseBlock.WriteLine($@"case ChunkType::{chunkType}:
                     {{
@@ -220,7 +244,7 @@ namespace p3dcppgen
    
                                         publicBlock.WriteLine($"const std::vector<{nativeType}>& Get{funcName}() const {{ return _{propertyName}; }}");
                                         privateBlock.WriteLine($"std::vector<{nativeType}> _{propertyName};");
-                                        readers.WriteLine($"_{propertyName}.resize(stream.Read<{nativeType}>());");
+                                        readers.WriteLine($"_{propertyName}.resize(stream.Read<uint32_t>());");
                                         readers.WriteLine($"stream.ReadBytes(reinterpret_cast<uint8_t*>(_{propertyName}.data()), _{propertyName}.size() * sizeof({nativeType}));");
                                     }
                                     else if (valueArgs.Length == 3)
@@ -290,14 +314,15 @@ namespace p3dcppgen
 
             var headerIncludes = new[]
             {
-                "string",
-                "memory",
-                "vector",
+                "P3D/P3DChunk.h",
                 "glm/vec2.hpp",
                 "glm/vec3.hpp",
                 "glm/vec4.hpp",
                 "glm/gtc/quaternion.hpp",
-                "glm/gtc/mat4x4.hpp",
+                "glm/mat4x4.hpp",
+                "string",
+                "memory",
+                "vector",
             };
 
             var cppIncludes = new[]
@@ -306,7 +331,7 @@ namespace p3dcppgen
                 "iostream",
             };
 
-            using (var writer = File.CreateText("p3d.generated.h"))
+            using (var writer = File.CreateText(Path.Combine(options.OutputPath, "p3d.generated.h")))
             {
                 writer.WriteLine(comment);
                 writer.WriteLine();
@@ -328,7 +353,7 @@ namespace p3dcppgen
                 writer.WriteLine("}");
             }
 
-            using (var writer = File.CreateText("p3d.generated.cpp"))
+            using (var writer = File.CreateText(Path.Combine(options.OutputPath, "p3d.generated.cpp")))
             {
                 writer.WriteLine(comment);
                 writer.WriteLine();
@@ -346,6 +371,8 @@ namespace p3dcppgen
                 writer.Write(cpprb.ToString());
                 writer.WriteLine("}");
             }
+
+            return exitCode;
         }
     }
 }
