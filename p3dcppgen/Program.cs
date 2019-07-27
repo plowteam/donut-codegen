@@ -239,8 +239,6 @@ namespace p3dcppgen
                             case "buffer":
                                 {
                                     var type = valueArgs[1];
-                                    if (type == "string") continue; // don't allow string buffers
-
                                     string nativeType = "";
                                     string resizeString = "";
                                     bool fixedSize = false;
@@ -267,6 +265,8 @@ namespace p3dcppgen
                                         nativeType = GetNativeType(type);
                                     }
 
+                                    var isString = nativeType == GetNativeType("string");
+
                                     if (valueArgs.Length == 2)
                                     {
                                         if (!fixedSize) resizeString = "stream.Read<uint32_t>()";
@@ -274,7 +274,18 @@ namespace p3dcppgen
                                         publicBlock.WriteLine($"const std::vector<{nativeType}>& Get{funcName}() const {{ return _{propertyName}; }}");
                                         privateBlock.WriteLine($"std::vector<{nativeType}> _{propertyName};");
                                         readers.WriteLine($"_{propertyName}.resize({resizeString});");
-                                        readers.WriteLine($"stream.ReadBytes(reinterpret_cast<uint8_t*>(_{propertyName}.data()), _{propertyName}.size() * sizeof({nativeType}));");
+
+                                        if (isString)
+                                        {
+                                            readers.WriteLine($"for (size_t i = 0; i < _{propertyName}.size(); ++i)");
+                                            readers.WriteLine("{");
+                                            readers.WriteLine($"    _{propertyName}[i] = stream.ReadLPString();");
+                                            readers.WriteLine("}");
+                                        }
+                                        else
+                                        {
+                                            readers.WriteLine($"stream.ReadBytes(reinterpret_cast<uint8_t*>(_{propertyName}.data()), _{propertyName}.size() * sizeof({nativeType}));");
+                                        }
                                     }
                                     else if (valueArgs.Length == 3)
                                     {

@@ -1,4 +1,8 @@
 ﻿{
+  "FrontendScreen": {
+    "pageNames": "buffer<string[numPages]>"
+  },
+
   "Vector2Channel": {
     "version": "u32",
     "param": "string[4]",
