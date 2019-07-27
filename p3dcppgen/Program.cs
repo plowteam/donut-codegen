@@ -169,7 +169,7 @@ namespace p3dcppgen
                         privateBlock.WriteLine($"{nativeType} _{propertyName};");
                         readers.WriteLine($"_{propertyName} = stream.Read{readerName}();");
                     }
-                    else if (valueArgs.Length <= 3)
+                    else if (valueArgs.Length <= 4)
                     {
                         var funcName = $"{Char.ToUpperInvariant(propertyName[0])}{propertyName.Substring(1)}";
 
@@ -240,6 +240,27 @@ namespace p3dcppgen
                         break;
                     }}");
                                         useDataStream = true;
+                                    }
+                                    break;
+                                }
+                            case "dictionary":
+                                {
+                                    if (valueArgs.Length == 4)
+                                    {
+                                        var keyType = GetNativeType(valueArgs[1]);
+                                        var keyName = valueArgs[2];
+                                        keyName = $"{Char.ToUpperInvariant(keyName[0])}{keyName.Substring(1)}";
+                                        var chunkType = valueArgs[3];
+
+                                        publicBlock.WriteLine($"{chunkType}* Get{funcName}Value(const {keyType}& key) const {{ auto it = _{propertyName}.find(key); return (it != _{propertyName}.end()) ? it->second.get() : nullptr; }}");
+                                        privateBlock.WriteLine($"std::map<{keyType}, std::unique_ptr<{chunkType}>> _{propertyName};");
+
+                                        caseBlock.WriteLine($@"case ChunkType::{chunkType}:
+                    {{
+                        auto value = std::make_unique<{chunkType}>(*child);
+                        _{propertyName}.insert({{ value->Get{keyName}(), std::move(value) }});
+                        break;
+                    }}");
                                     }
                                     break;
                                 }
@@ -371,6 +392,7 @@ namespace p3dcppgen
                 "string",
                 "memory",
                 "vector",
+                "map",
             };
 
             var cppIncludes = new[]
