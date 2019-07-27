@@ -39,7 +39,7 @@ namespace p3dcppgen
             {2}switch (child->GetType())
             {{
                 {1}                default:
-                    std::cout << ""[{0}] Unexpected Chunk: "" << child->GetType() << ""\n"";
+                    {3}break;
             }}
         }}";
 
@@ -121,9 +121,16 @@ namespace p3dcppgen
                 var privateBlock = new IndentedTextWriter(new StringWriter()) { Indent = 2 };
                 var caseBlock = new IndentedTextWriter(new StringWriter()) { Indent = 4 };
                 bool useDataStream = false;
+                bool useLogs = false;
 
                 foreach (var classProperty in classToken.Value.Values<JProperty>())
                 {
+                    if (classProperty.Name == "!log")
+                    {
+                        useLogs = (bool)classProperty.Value;
+                        continue;
+                    }
+
                     if (classProperty.Value.Type != JTokenType.String) continue;
 
                     var valueString = classProperty.Value.ToString();
@@ -338,7 +345,8 @@ namespace p3dcppgen
                     switchBlock.WriteLine(switchCaseTemplate,
                         classToken.Key,
                         caseBlock.InnerWriter,
-                        useDataStream ? "MemoryStream data(child->GetData());\n\n            " : null);
+                        useDataStream ? "MemoryStream data(child->GetData());\n\n            " : null,
+                        useLogs ? $"std::cout << \"[{classToken.Key}] Unexpected Chunk: \" << child->GetType() << \"\\n\";\n                    " : "");
                 }
 
                 headersb.AppendLine(string.Format(classTemplate,
