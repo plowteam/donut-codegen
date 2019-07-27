@@ -17,6 +17,8 @@ namespace p3dcppgen
 
         {0}(const P3DChunk&);
 
+        static std::unique_ptr<{0}> Load(const P3DChunk& chunk) {{ return std::make_unique<{0}>(chunk); }}
+
         {1}
     private:
 
@@ -240,11 +242,34 @@ namespace p3dcppgen
                                     {
                                         var type = valueArgs[1];
                                         if (type == "string") break; // don't allow string buffers
-                                        var nativeType = GetNativeType(type);
-   
+
+                                        string nativeType = "";
+                                        string resizeString = "stream.Read<uint32_t>()";
+
+                                        if (type.Contains("["))
+                                        {
+                                            var split = type.Split(new char[] { '[', ']' }, StringSplitOptions.RemoveEmptyEntries);
+                                            if (split.Length != 2) continue;
+
+                                            if (uint.TryParse(split[1], out var n))
+                                            {
+                                                resizeString = $"{n}";
+                                            }
+                                            else
+                                            {
+                                                resizeString = $"_{split[1]}";
+                                            }
+
+                                            nativeType = GetNativeType(split[0]);
+                                        }
+                                        else
+                                        {
+                                            nativeType = GetNativeType(type);
+                                        }
+
                                         publicBlock.WriteLine($"const std::vector<{nativeType}>& Get{funcName}() const {{ return _{propertyName}; }}");
                                         privateBlock.WriteLine($"std::vector<{nativeType}> _{propertyName};");
-                                        readers.WriteLine($"_{propertyName}.resize(stream.Read<uint32_t>());");
+                                        readers.WriteLine($"_{propertyName}.resize({resizeString});");
                                         readers.WriteLine($"stream.ReadBytes(reinterpret_cast<uint8_t*>(_{propertyName}.data()), _{propertyName}.size() * sizeof({nativeType}));");
                                     }
                                     else if (valueArgs.Length == 3)
@@ -333,6 +358,7 @@ namespace p3dcppgen
 
             using (var writer = File.CreateText(Path.Combine(options.OutputPath, "p3d.generated.h")))
             {
+                writer.WriteLine("#pragma once\n");
                 writer.WriteLine(comment);
                 writer.WriteLine();
 
@@ -354,7 +380,7 @@ namespace p3dcppgen
             }
 
             using (var writer = File.CreateText(Path.Combine(options.OutputPath, "p3d.generated.cpp")))
-            {
+            {              
                 writer.WriteLine(comment);
                 writer.WriteLine();
 

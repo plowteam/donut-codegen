@@ -1,4 +1,14 @@
 ﻿{
+  "Vector2Channel": {
+    "version": "u32",
+    "param": "string[4]",
+    "mapping": "u16",
+    "constants": "vec3",
+    "numFrames": "u32",
+    "frames": "buffer<u16[numFrames]>",
+    "values": "buffer<vec2[numFrames]>"
+  },
+
   "Animation": {
     "version": "u32",
     "name": "string",
@@ -25,16 +35,6 @@
     "vector3Channel": "child Vector3Channel",
     "quaternionChannel": "child QuaternionChannel",
     "compressedQuaternionChannel": "child CompressedQuaternionChannel"
-  },
-
-  "Vector2Channel": {
-    "version": "u32",
-    "param": "string[4]",
-    "mapping": "u16",
-    "constants": "vec3",
-    "numFrames": "u32",
-    "frames": "buffer<u16>",
-    "values": "buffer<vec2>"
   },
 
   "Vector3Channel": {
