@@ -238,34 +238,38 @@ namespace p3dcppgen
                                 }
                             case "buffer":
                                 {
-                                    if (valueArgs.Length == 2)
+                                    var type = valueArgs[1];
+                                    if (type == "string") continue; // don't allow string buffers
+
+                                    string nativeType = "";
+                                    string resizeString = "";
+                                    bool fixedSize = false;
+
+                                    if (type.Contains("["))
                                     {
-                                        var type = valueArgs[1];
-                                        if (type == "string") break; // don't allow string buffers
+                                        var split = type.Split(new char[] { '[', ']' }, StringSplitOptions.RemoveEmptyEntries);
+                                        if (split.Length != 2) continue;
 
-                                        string nativeType = "";
-                                        string resizeString = "stream.Read<uint32_t>()";
-
-                                        if (type.Contains("["))
+                                        if (uint.TryParse(split[1], out var n))
                                         {
-                                            var split = type.Split(new char[] { '[', ']' }, StringSplitOptions.RemoveEmptyEntries);
-                                            if (split.Length != 2) continue;
-
-                                            if (uint.TryParse(split[1], out var n))
-                                            {
-                                                resizeString = $"{n}";
-                                            }
-                                            else
-                                            {
-                                                resizeString = $"_{split[1]}";
-                                            }
-
-                                            nativeType = GetNativeType(split[0]);
+                                            resizeString = $"{n}";
                                         }
                                         else
                                         {
-                                            nativeType = GetNativeType(type);
+                                            resizeString = $"_{split[1]}";
                                         }
+
+                                        nativeType = GetNativeType(split[0]);
+                                        fixedSize = true;
+                                    }
+                                    else
+                                    {
+                                        nativeType = GetNativeType(type);
+                                    }
+
+                                    if (valueArgs.Length == 2)
+                                    {
+                                        if (!fixedSize) resizeString = "stream.Read<uint32_t>()";
 
                                         publicBlock.WriteLine($"const std::vector<{nativeType}>& Get{funcName}() const {{ return _{propertyName}; }}");
                                         privateBlock.WriteLine($"std::vector<{nativeType}> _{propertyName};");
@@ -274,17 +278,17 @@ namespace p3dcppgen
                                     }
                                     else if (valueArgs.Length == 3)
                                     {
-                                        var type = GetNativeType(valueArgs[1]);
                                         var chunkType = valueArgs[2];
 
-                                        publicBlock.WriteLine($"const std::vector<{type}>& Get{funcName}() const {{ return _{propertyName}; }}");
-                                        privateBlock.WriteLine($"std::vector<{type}> _{propertyName};");
+                                        if (!fixedSize) resizeString = "data.Read<uint32_t>()";
+
+                                        publicBlock.WriteLine($"const std::vector<{nativeType}>& Get{funcName}() const {{ return _{propertyName}; }}");
+                                        privateBlock.WriteLine($"std::vector<{nativeType}> _{propertyName};");
 
                                         caseBlock.WriteLine($@"case ChunkType::{chunkType}:
                     {{
-                        uint32_t length = data.Read<uint32_t>();
-                        _{propertyName}.resize(length);
-                        data.ReadBytes(reinterpret_cast<uint8_t*>(_{propertyName}.data()), length * sizeof({type}));
+                        _{propertyName}.resize({resizeString});
+                        data.ReadBytes(reinterpret_cast<uint8_t*>(_{propertyName}.data()), _{propertyName}.size() * sizeof({nativeType}));
                         break;
                     }}");
                                         useDataStream = true;
@@ -293,7 +297,7 @@ namespace p3dcppgen
                                 }
                             case "buffers":
                                 {
-                                    if (valueArgs.Length != 3) break;
+                                    if (valueArgs.Length != 3) continue;
                                     var type = GetNativeType(valueArgs[1]);
                                     if (type == "string") break; // don't allow string buffers
                                     var chunkType = valueArgs[2];
