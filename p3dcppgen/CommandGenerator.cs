@@ -53,7 +53,7 @@ namespace DonutCodeGen
             }
         }
 
-        public static int Process(string inputFile, string outputPath)
+        public static int Process(string inputFile, string outputPath, string copyright)
         {
             int exitCode = 0;
 
@@ -217,8 +217,12 @@ namespace DonutCodeGen
                 }
             }
 
-            using (var writer = File.CreateText(Path.Combine(outputPath, "commands.generated.cpp")))
+            using (var writer = File.CreateText(Path.Combine(outputPath, "Commands.generated.cpp")))
             {
+                writer.WriteLine($"// {copyright}\n");
+                writer.WriteLine(Program.GeneratedComment);
+                writer.WriteLine();
+
                 writer.WriteLine("#include \"Commands.h\"");
 
                 writer.WriteLine();
