@@ -1,12 +1,29 @@
-﻿{
+{
+  "Animation": {
+    "version": "u32",
+    "name": "string",
+    "type": "string[4]",
+    "numFrames": "float",
+    "frameRate": "float",
+    "looping": "u32",
+    "groupList": "child AnimationGroupList"
+  },
+
   "AnimationGroupList": {
     "version": "u32",
     "numGroups": "u32",
-    "groups": "dictionary<string name> AnimationGroup"
+    "groups": "children AnimationGroup"
   },
 
-  "FrontendScreen": {
-    "pageNames": "buffer<string[numPages]>"
+  "AnimationGroup": {
+    "version": "u32",
+    "name": "string",
+    "groupId": "u32",
+    "numChannels": "u32",
+    "vector2Channels": "dictionary<string param> Vector2Channel",
+    "vector3Channels": "dictionary<string param> Vector3Channel",
+    "quaternionChannels": "dictionary<string param> QuaternionChannel",
+    "compressedQuaternionChannels": "dictionary<string param> CompressedQuaternionChannel"
   },
 
   "Vector2Channel": {
@@ -19,50 +36,28 @@
     "values": "buffer<vec2[numFrames]>"
   },
 
-  "Animation": {
-    "version": "u32",
-    "name": "string",
-    "type": "string[4]",
-    "numFrames": "float",
-    "frameRate": "float",
-    "looping": "u32",
-    "groupList": "child AnimationGroupList"
-  },
-
-  "AnimationGroup": {
-    "version": "u32",
-    "name": "string",
-    "groupId": "u32",
-    "numChannels": "u32",
-    "vector1Channel": "child Vector1Channel",
-    "vector2Channel": "child Vector2Channel",
-    "vector3Channel": "child Vector3Channel",
-    "quaternionChannel": "child QuaternionChannel",
-    "compressedQuaternionChannel": "child CompressedQuaternionChannel"
-  },
-
   "Vector3Channel": {
     "version": "u32",
     "param": "string[4]",
     "numFrames": "u32",
-    "frames": "buffer<u16>",
-    "values": "buffer<vec3>"
+    "frames": "buffer<u16[numFrames]>",
+    "values": "buffer<vec3[numFrames]>"
   },
 
   "QuaternionChannel": {
     "version": "u32",
     "param": "string[4]",
     "numFrames": "u32",
-    "frames": "buffer<u16>",
-    "values": "buffer<quat>"
+    "frames": "buffer<u16[numFrames]>",
+    "values": "buffer<quat[numFrames]>"
   },
 
   "CompressedQuaternionChannel": {
     "version": "u32",
     "param": "string[4]",
     "numFrames": "u32",
-    "frames": "buffer<u16>",
-    "values": "buffer<u64>"
+    "frames": "buffer<u16[numFrames]>",
+    "values": "buffer<u64[numFrames]>"
   },
 
   "Mesh": {
@@ -104,7 +99,7 @@
     "indices": "buffer<u32> IndexList",
     "normals": "buffer<vec3> NormalList",
     "uvs": "buffers<vec2> UVList",
-    "matrixList": "buffer<u8> MatrixList",
+    "matrixList": "buffer<u32> MatrixList",
     "weightList": "buffer<vec3> WeightList",
     "matrixPalette": "buffer<u32> MatrixPalette",
     "colors": "buffer<u32> ColorList"
@@ -137,13 +132,33 @@
 
   "StaticPhysics": {
     "name": "string",
-    "collision": "child CollisionObject"
+    "collisionObject": "child CollisionObject"
   },
 
   "InstancedStaticPhysics": {
     "name": "string",
     "meshes": "children Mesh",
     "instanceList": "child InstanceList"
+  },
+
+  "DynamicPhysics": {
+    "name": "string",
+    "meshes": "children Mesh",
+    "instanceList": "child InstanceList"
+  },
+
+  "AnimDynamicPhysics": {
+    "name": "string",
+    "animObjectWrapper": "child AnimObjectWrapper",
+    "instanceList": "child InstanceList"
+  },
+
+  "AnimObjectWrapper": {
+    "name": "string",
+    "compositeDrawables": "children CompositeDrawable",
+    "skeletons": "children Skeleton",
+    "meshes": "children Mesh",
+    "animations": "children Animation"
   },
 
   "InstanceList": {
@@ -162,33 +177,20 @@
 
   "SceneGraphBranch": {
     "name": "string",
+    "children": "children SceneGraphTransform"
+  },
+
+  "SceneGraphTransform": {
+    "name": "string",
     "numChildren": "u32",
     "transform": "mat4",
     "children": "children SceneGraphTransform",
     "drawables": "children SceneGraphDrawable"
   },
 
-  "SceneGraphTransform": {
-    "name": "string",
-    "children": "children SceneGraphTransform"
-  },
-
   "SceneGraphDrawable": {
     "name": "string",
     "sortOrder": "child<float> SceneGraphSortOrder"
-  },
-
-  "CollisionObject": {
-    "name": "string",
-    "version": "u32",
-    "materialName": "string",
-    "objectCount": "u32",
-    "ownerCount": "u32",
-    "volumes": "children CollisionVolume"
-  },
-
-  "CollisionOrientedBoundingBox": {
-    "vectors": "children<vec3> CollisionVector"
   },
 
   "Shader": {
@@ -199,12 +201,33 @@
     "vertexNeeds": "u32",
     "vertexMask": "u32",
     "numParams": "u32",
-    "textureParams": "children ShaderTextureParam"
+    "textureParams": "children ShaderTextureParam",
+    "integerParams": "children ShaderIntParam",
+    "floatParams": "children ShaderFloatParam",
+    "colorParams": "children ShaderColorParam"
   },
 
   "ShaderTextureParam": {
     "key": "string[4]",
     "value": "string"
+  },
+
+  "ShaderIntParam": {
+    "key": "string[4]",
+    "value": "s32"
+  },
+
+  "ShaderFloatParam": {
+    "key": "string[4]",
+    "value": "float"
+  },
+
+  "ShaderColorParam": {
+    "key": "string[4]",
+    "r": "u8",
+    "g": "u8",
+    "b": "u8",
+    "a": "u8"
   },
 
   "CompositeDrawable": {
@@ -303,5 +326,212 @@
     "numTextures": "u32",
     "textures": "children Texture",
     "glyphs": "buffer<FontGlyph> FontGlyphs"
+  },
+
+  "Sprite": {
+    "name": "string",
+    "nativeX": "u32",
+    "nativeY": "u32",
+    "shader": "string",
+    "width": "u32",
+    "height": "u32",
+    "imageCount": "u32",
+    "blitBorder": "u32",
+    "images": "children Image"
+  },
+
+  "FrontendScreen": {
+    "name": "string",
+    "version": "u32",
+    "numPages": "u32",
+    "pageNames": "buffer<string[numPages]>"
+  },
+
+  "FrontendProject": {
+    "name": "string",
+    "version": "u32",
+    "resX": "u32",
+    "resY": "u32",
+    "platform": "string",
+    "pagePath": "string",
+    "resourcePath": "string",
+    "screenPath": "string",
+    "pages": "children FrontendPage",
+    "screens": "children FrontendScreen"
+  },
+
+  "FrontendPage": {
+    "name": "string",
+    "version": "u32",
+    "resX": "u32",
+    "resY": "u32",
+    "layers": "children FrontendLayer",
+    "imageResources": "children FrontendImageResource"
+  },
+
+  "FrontendLayer": {
+    "!log": true,
+    "name": "string",
+    "version": "u32",
+    "visible": "u32",
+    "editable": "u32",
+    "alpha": "u32",
+    "groups": "children FrontendGroup",
+    "multiSprites": "children FrontendMultiSprite",
+    "multiTexts": "children FrontendMultiText",
+    "objects": "children FrontendObject",
+    "polygons": "children FrontendPolygon"
+  },
+
+  "FrontendGroup": {
+    "!log": true,
+    "name": "string",
+    "version": "u32",
+    "alpha": "u32",
+    "children": "children FrontendGroup",
+    "multiSprites": "children FrontendMultiSprite",
+    "multiTexts": "children FrontendMultiText",
+    "polygons": "children FrontendPolygon"
+  },
+
+  "FrontendMultiSprite": {
+    "name": "string"
+  },
+
+  "FrontendMultiText": {
+    "name": "string"
+  },
+
+  "FrontendObject": {
+    "name": "string"
+  },
+
+  "FrontendPolygon": {
+    "name": "string"
+  },
+
+  "FrontendImageResource": {
+    "name": "string",
+    "version": "u32",
+    "filepath": "string"
+  },
+
+  "Locator2": {
+    "name": "string",
+    "type": "u32",
+    "dataSize": "u32",
+    "triggers": "children TriggerVolume"
+  },
+
+  "TriggerVolume": {
+    "name": "string"
+  },
+
+  "Camera": {
+    "name": "string",
+    "version": "u32",
+    "fov": "float",
+    "aspectRatio": "float",
+    "nearClip": "float",
+    "farClip": "float",
+    "position": "vec3",
+    "forward": "vec3",
+    "up": "vec3"
+  },
+
+  "MultiController": {
+    "name": "string",
+    "version": "u32",
+    "length": "float",
+    "frameRate": "float",
+    "numTracks": "u32",
+    "tracks": "child MultiControllerTracks"
+  },
+
+  "MultiControllerTracks": {
+  },
+
+  "CollisionObject": {
+    "name": "string",
+    "version": "u32",
+    "materialName": "string",
+    "numSubObjects": "u32",
+    "numVolumeOwners": "u32",
+    "volumeOwners": "children CollisionVolumeOwner",
+    "volume": "child CollisionVolume",
+    "attribute": "child CollisionObjectAttribute"
+  },
+
+  "CollisionVolume": {
+    "objectRefIndex": "u32",
+    "ownerIndex": "s32",
+    "numSubVolumes": "u32",
+    "subVolumes": "children CollisionVolume",
+    "bBox": "child CollisionBBoxVolume",
+    "obBox": "child CollisionOBBoxVolume",
+    "sphere": "child CollisionSphere",
+    "cylinder": "child CollisionCylinder"
+  },
+
+  "CollisionSphere": {
+    "radius": "float",
+    "vectors": "children<vec3> CollisionVector"
+  },
+
+  "CollisionCylinder": {
+    "radius": "float",
+    "length": "float",
+    "flatEnd": "u16",
+    "vectors": "children<vec3> CollisionVector"
+  },
+
+  "CollisionOBBoxVolume": {
+    "halfExtents": "vec3",
+    "vectors": "children<vec3> CollisionVector"
+  },
+
+  "CollisionBBoxVolume": {
+    "nothing": "u32"
+  },
+
+  "CollisionVector": {
+    "value": "vec3"
+  },
+
+  "CollisionVolumeOwner": {
+    "numNames": "u32",
+    "names": "children CollisionVolumeOwnerName"
+  },
+
+  "CollisionVolumeOwnerName": {
+    "name": "string"
+  },
+
+  "CollisionObjectAttribute": {
+    "static": "u16",
+    "defaultArea": "u32",
+    "canRoll": "u16",
+    "canSlide": "u16",
+    "canSpin": "u16",
+    "canBounce": "u16",
+    "unknown1": "u32",
+    "unknown2": "u32",
+    "unknown3": "u32"
+  },
+
+  "FenceWrapper": {
+    "fence": "child Fence"
+  },
+
+  "Fence": {
+    "start": "vec3",
+    "end": "vec3",
+    "normal": "vec3"
+  },
+
+  "Set": {
+    "name": "string",
+    "numTextures": "u32",
+    "textures": "children Texture"
   }
 }

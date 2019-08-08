@@ -3,7 +3,7 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 15
 VisualStudioVersion = 15.0.27703.2042
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "p3dcppgen", "p3dcppgen\p3dcppgen.csproj", "{6727450A-25C6-45BD-8E37-E5D2D1678471}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "donut-codegen", "p3dcppgen\donut-codegen.csproj", "{6727450A-25C6-45BD-8E37-E5D2D1678471}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

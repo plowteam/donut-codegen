@@ -6,8 +6,8 @@
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
     <ProjectGuid>{6727450A-25C6-45BD-8E37-E5D2D1678471}</ProjectGuid>
     <OutputType>Exe</OutputType>
-    <RootNamespace>p3dcppgen</RootNamespace>
-    <AssemblyName>p3dcppgen</AssemblyName>
+    <RootNamespace>DonutCodeGen</RootNamespace>
+    <AssemblyName>donut-codegen</AssemblyName>
     <TargetFrameworkVersion>v4.6.1</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
@@ -48,11 +48,16 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="P3DGenerator.cs" />
+    <Compile Include="CommandGenerator.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />
+    <None Include="cmd.json">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
     <None Include="p3d.json">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
