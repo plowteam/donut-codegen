@@ -26,7 +26,7 @@ namespace DonutCodeGen
         };
 
         private static readonly string[] valueTypes =
-{
+        {
             "const std::string&",
             "int32_t",
             "int64_t",
