@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Text;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
 
@@ -60,8 +61,13 @@ namespace DonutCodeGen
             var functions = new StringWriter();
             var commands = new StringWriter();
             var commandMap = new StringWriter();
+            var mdsb = new StringBuilder();
 
             var commandDict = JsonConvert.DeserializeObject<Dictionary<string, Params>>(File.ReadAllText(inputFile));
+
+            mdsb.AppendLine($"## {commandDict.Count} Commands");
+            mdsb.AppendLine("|Name|Params|Help|");
+            mdsb.AppendLine("|--|--|--|");
 
             foreach (var command in commandDict)
             {
@@ -207,13 +213,25 @@ namespace DonutCodeGen
                     commands.WriteLine("    }\n");
                 }
 
+
                 if (types.Count == 0)
                 {
                     commandMap.WriteLine($"        {{ \"{funcName}\", Command {{ &Command_{funcName}, \"{helpText}\" }} }},");
+
+                    mdsb.Append($"|`{funcName}`");
+                    mdsb.Append($"|");
+                    mdsb.Append($"|`{helpText}`|\n");
                 }
                 else
                 {
                     commandMap.WriteLine($"        {{ \"{funcName}\", Command {{ &Command_{funcName}, \"{helpText}\", {{ {string.Join(", ", types.Select(x => $"{{ {string.Join(", ", x.Select(t => $"ParamType::{t}"))} }}"))} }} }} }},");
+
+                    foreach (var funcTypes in types)
+                    {
+                        mdsb.Append($"|`{funcName}`");
+                        mdsb.Append($"|{string.Join(" ", funcTypes.Select(x => $"`{x}`"))}");
+                        mdsb.Append($"|`{helpText}`|\n");
+                    }
                 }
             }
 
@@ -240,6 +258,8 @@ namespace DonutCodeGen
 
                 writer.WriteLine("}");
             }
+
+            File.WriteAllText("Commands.md", mdsb.ToString());
 
             return exitCode;
         }

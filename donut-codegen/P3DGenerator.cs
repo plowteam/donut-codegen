@@ -80,7 +80,8 @@ namespace DonutCodeGen
 
             var defObject = JObject.Parse(File.ReadAllText(inputFile));
             var headersb = new StringBuilder();
-            var cpprb = new StringBuilder();
+            var cppsb = new StringBuilder();
+            var mdsb = new StringBuilder();
             var forwardDecl = new List<string>();
 
             foreach (var classToken in defObject)
@@ -93,6 +94,9 @@ namespace DonutCodeGen
                 var caseBlock = new IndentedTextWriter(new StringWriter()) { Indent = 4 };
                 bool useDataStream = false;
                 bool useLogs = false;
+
+                var mdNameTypes = new StringBuilder();
+                var mdNameChunks = new StringBuilder();
 
                 foreach (var classProperty in classToken.Value.Values<JProperty>())
                 {
@@ -130,6 +134,8 @@ namespace DonutCodeGen
                             privateBlock.WriteLine($"{nativeType} _{propertyName};");
                             readers.WriteLine($"_{propertyName} = stream.ReadString({n});");
 
+                            mdNameTypes.AppendLine($"|`{propertyName}`|`{type}`|");
+
                             continue;
                         }
 
@@ -139,6 +145,8 @@ namespace DonutCodeGen
                         publicBlock.WriteLine($"const {nativeType}& Get{funcName}() const {{ return _{propertyName}; }}");
                         privateBlock.WriteLine($"{nativeType} _{propertyName};");
                         readers.WriteLine($"_{propertyName} = stream.Read{readerName}();");
+
+                        mdNameTypes.AppendLine($"|`{propertyName}`|`{type}`|");
                     }
                     else if (valueArgs.Length <= 4)
                     {
@@ -160,6 +168,8 @@ namespace DonutCodeGen
                         _{propertyName} = std::make_unique<{chunkType}>(*child);
                         break;
                     }}");
+
+                                        mdNameChunks.AppendLine($"|`{propertyName}`|`{chunkType}`|");
                                     }
                                     else if (valueArgs.Length == 3)
                                     {
@@ -177,6 +187,8 @@ namespace DonutCodeGen
                         break;
                     }}");
                                         useDataStream = true;
+
+                                        mdNameChunks.AppendLine($"|`{propertyName}`|`{chunkType}<{type}>`|");
                                     }
                                     break;
                                 }
@@ -194,6 +206,8 @@ namespace DonutCodeGen
                         _{propertyName}.push_back(std::make_unique<{chunkType}>(*child));
                         break;
                     }}");
+
+                                        mdNameChunks.AppendLine($"|`{propertyName}`|`{chunkType}[]`|");
                                     }
                                     else if (valueArgs.Length == 3)
                                     {
@@ -211,6 +225,8 @@ namespace DonutCodeGen
                         break;
                     }}");
                                         useDataStream = true;
+
+                                        mdNameChunks.AppendLine($"|`{propertyName}`|`{chunkType}<{type}>[]`|");
                                     }
                                     break;
                                 }
@@ -232,6 +248,8 @@ namespace DonutCodeGen
                         _{propertyName}.insert({{ value->Get{keyName}(), std::move(value) }});
                         break;
                     }}");
+
+                                        mdNameChunks.AppendLine($"|`{propertyName}`|`{chunkType}[]`|");
                                     }
                                     break;
                                 }
@@ -241,6 +259,8 @@ namespace DonutCodeGen
                                     string nativeType = "";
                                     string resizeString = "";
                                     bool fixedSize = false;
+                                    string mdFixedSize = "";
+                                    string fixedType = "";
 
                                     if (type.Contains("["))
                                     {
@@ -250,13 +270,16 @@ namespace DonutCodeGen
                                         if (uint.TryParse(split[1], out var n))
                                         {
                                             resizeString = $"{n}";
+                                            mdFixedSize = resizeString;
                                         }
                                         else
                                         {
                                             resizeString = $"_{split[1]}";
+                                            mdFixedSize = $"{split[1]}";
                                         }
 
                                         nativeType = GetNativeType(split[0]);
+                                        fixedType = split[0];
                                         fixedSize = true;
                                     }
                                     else
@@ -285,6 +308,15 @@ namespace DonutCodeGen
                                         {
                                             readers.WriteLine($"stream.ReadBytes(reinterpret_cast<uint8_t*>(_{propertyName}.data()), _{propertyName}.size() * sizeof({nativeType}));");
                                         }
+
+                                        if (fixedSize)
+                                        {
+                                            mdNameTypes.AppendLine($"|`{propertyName}`|`{fixedType}[{mdFixedSize}]`|");
+                                        }
+                                        else
+                                        {
+                                            mdNameTypes.AppendLine($"|`{propertyName}`|`{type}[u32]`|");
+                                        }
                                     }
                                     else if (valueArgs.Length == 3)
                                     {
@@ -302,6 +334,15 @@ namespace DonutCodeGen
                         break;
                     }}");
                                         useDataStream = true;
+
+                                        if (fixedSize)
+                                        {
+                                            mdNameChunks.AppendLine($"|`{propertyName}`|`{chunkType}<{type}>[{mdFixedSize}]`|");
+                                        }
+                                        else
+                                        {
+                                            mdNameChunks.AppendLine($"|`{propertyName}`|`{chunkType}<{type}>[u32]`|");
+                                        }
                                     }
                                     break;
                                 }
@@ -325,10 +366,26 @@ namespace DonutCodeGen
                         break;
                     }}");
                                     useDataStream = true;
+
+                                    mdNameChunks.AppendLine($"|`{propertyName}`|`{chunkType}<{valueArgs[1]}>[u32][u32]`|");
+
                                     break;
                                 }
                         }
                     }
+                }
+
+                mdsb.AppendLine($"## {classToken.Key}");
+                mdsb.AppendLine("|Name|Type|");
+                mdsb.AppendLine("|--|--|");
+                mdsb.AppendLine(mdNameTypes.ToString());
+
+                if (mdNameChunks.Length > 0)
+                {
+                    mdsb.AppendLine($"### Children");
+                    mdsb.AppendLine("|Name|Chunk|");
+                    mdsb.AppendLine("|--|--|");
+                    mdsb.AppendLine(mdNameChunks.ToString());
                 }
 
                 var switchBlock = new StringWriter();
@@ -356,7 +413,7 @@ namespace DonutCodeGen
                     publicBlock.InnerWriter,
                     privateBlock.InnerWriter));
 
-                cpprb.AppendLine(string.Format(ctorTemplate,
+                cppsb.AppendLine(string.Format(ctorTemplate,
                     classToken.Key,
                     readers.InnerWriter,
                     switchBlock,
@@ -385,6 +442,9 @@ namespace DonutCodeGen
 
             var headerPath = Path.Combine(outputPath, "P3D.generated.h");
             var cppPath = Path.Combine(outputPath, "P3D.generated.cpp");
+            var mdPath = "Chunks.md";
+
+            File.WriteAllText(mdPath, mdsb.ToString());
 
             using (var stream = new MemoryStream())
             using (var writer = new StreamWriter(stream))
@@ -439,7 +499,7 @@ namespace DonutCodeGen
 
                 writer.WriteLine("namespace Donut::P3D");
                 writer.Write("{");
-                writer.Write(cpprb.ToString());
+                writer.Write(cppsb.ToString());
                 writer.WriteLine("}");
 
                 writer.Flush();
