@@ -2,6 +2,7 @@
 using System.CodeDom.Compiler;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Text;
 using Newtonsoft.Json.Linq;
 
@@ -30,7 +31,7 @@ namespace DonutCodeGen
         assert(chunk.IsType(ChunkType::{0}));
 
         MemoryStream stream(chunk.GetData());
-        {1}{2}    }}";
+        {1}{3}{2}    }}";
 
         static readonly string switchCaseTemplate = @"
         for (auto const& child : chunk.GetChildren())
@@ -340,6 +341,16 @@ namespace DonutCodeGen
                         useLogs ? $"std::cout << \"[{classToken.Key}] Unexpected Chunk: \" << child->GetType() << \"\\n\";\n                    " : "");
                 }
 
+                var endOfStream = new StringWriter();
+                if (useLogs)
+                {
+                    endOfStream.WriteLine($@"		
+        if (!stream.End())
+		{{
+            std::cout << fmt::format(""[{classToken.Key}] only read {{0}} out of {{1}} bytes!"", stream.Position(), chunk.GetDataSize()) << std::endl;
+        }}");
+                }
+
                 headersb.AppendLine(string.Format(classTemplate,
                     classToken.Key,
                     publicBlock.InnerWriter,
@@ -348,7 +359,8 @@ namespace DonutCodeGen
                 cpprb.AppendLine(string.Format(ctorTemplate,
                     classToken.Key,
                     readers.InnerWriter,
-                    switchBlock));
+                    switchBlock,
+                    endOfStream));
             }
 
             var headerIncludes = new[]
@@ -371,7 +383,11 @@ namespace DonutCodeGen
                 "iostream",
             };
 
-            using (var writer = File.CreateText(Path.Combine(outputPath, "P3D.generated.h")))
+            var headerPath = Path.Combine(outputPath, "P3D.generated.h");
+            var cppPath = Path.Combine(outputPath, "P3D.generated.cpp");
+
+            using (var stream = new MemoryStream())
+            using (var writer = new StreamWriter(stream))
             {
                 writer.WriteLine($"// {copyright}\n");
                 writer.WriteLine("#pragma once\n");
@@ -393,9 +409,21 @@ namespace DonutCodeGen
                 }
                 writer.Write(headersb.ToString());
                 writer.WriteLine("}");
+
+                writer.Flush();
+
+                var bytes = stream.ToArray();
+                bool fileEqual = File.Exists(headerPath) && new FileInfo(headerPath).Length == stream.Length &&
+                    File.ReadAllBytes(headerPath).SequenceEqual(bytes);
+
+                if (!fileEqual)
+                {
+                    File.WriteAllBytes(headerPath, bytes);
+                }
             }
 
-            using (var writer = File.CreateText(Path.Combine(outputPath, "P3D.generated.cpp")))
+            using (var stream = new MemoryStream())
+            using (var writer = new StreamWriter(stream))
             {
                 writer.WriteLine($"// {copyright}\n");
                 writer.WriteLine(Program.GeneratedComment);
@@ -413,6 +441,17 @@ namespace DonutCodeGen
                 writer.Write("{");
                 writer.Write(cpprb.ToString());
                 writer.WriteLine("}");
+
+                writer.Flush();
+
+                var bytes = stream.ToArray();
+                bool fileEqual = File.Exists(cppPath) && new FileInfo(cppPath).Length == stream.Length &&
+                    File.ReadAllBytes(cppPath).SequenceEqual(bytes);
+
+                if (!fileEqual)
+                {
+                    File.WriteAllBytes(cppPath, bytes);
+                }
             }
 
             return exitCode;
