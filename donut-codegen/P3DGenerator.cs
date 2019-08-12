@@ -489,7 +489,7 @@ namespace DonutCodeGen
                 writer.WriteLine(Program.GeneratedComment);
                 writer.WriteLine();
 
-                writer.WriteLine("#include \"p3d.generated.h\"");
+                writer.WriteLine("#include \"P3D.generated.h\"");
                 foreach (var inc in cppIncludes)
                 {
                     writer.WriteLine($"#include <{inc}>");
